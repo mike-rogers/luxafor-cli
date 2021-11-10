@@ -16,3 +16,5 @@ target_link_libraries(LuxaforCLI ${LIBS})
 target_include_directories(LuxaforCLI PUBLIC
   "${PROJECT_BINARY_DIR}"
   )
+set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "luxafor")
