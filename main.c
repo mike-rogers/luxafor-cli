@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hidapi.h"
-#include "main.h"
 
 #define MAX_STR 255
 #define LUXAFOR_VENDOR_ID 0x04d8
