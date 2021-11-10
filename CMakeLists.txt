@@ -8,8 +8,6 @@ find_package(HIDAPI REQUIRED)
 include_directories(${HIDAPI_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${HIDAPI_LIBRARIES})
 
-configure_file(main.h.in main.h)
-
 add_executable(LuxaforCLI main.c)
 target_link_libraries(LuxaforCLI ${LIBS})
 
