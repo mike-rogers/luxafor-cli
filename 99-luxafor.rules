@@ -1,0 +1,5 @@
+# Allow non-root access to the Luxafor Flag (vendor 04d8, product f372).
+# Copy to /etc/udev/rules.d/ then run:
+#   sudo udevadm control --reload && sudo udevadm trigger
+KERNEL=="hidraw*", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="f372", MODE="0666", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="f372", MODE="0666", TAG+="uaccess"
