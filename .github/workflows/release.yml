@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: luxafor-linux-x86_64
+            binary: build/luxafor
+          - os: macos-latest
+            artifact: luxafor-macos-universal
+            binary: build/luxafor
+            cmake_args: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          - os: windows-latest
+            artifact: luxafor-windows-x86_64.exe
+            binary: build/Release/luxafor.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+
+      # Release binaries always vendor hidapi (statically linked) so they
+      # run without a hidapi install on the target machine
+      - name: Configure
+        run: cmake -B build -DLUXAFOR_VENDORED_HIDAPI=ON -DCMAKE_BUILD_TYPE=Release ${{ matrix.cmake_args }}
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Stage artifact
+        run: cp ${{ matrix.binary }} ${{ matrix.artifact }}
+        shell: bash
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: luxafor-*
+          generate_release_notes: true
