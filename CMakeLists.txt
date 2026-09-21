@@ -13,6 +13,9 @@ if(NOT hidapi_FOUND)
   include(FetchContent)
   set(BUILD_SHARED_LIBS OFF)
   set(HIDAPI_WITH_TESTS OFF)
+  # hidraw is the right backend for this device; the libusb backend would
+  # drag in a libusb-1.0 build dependency on Linux for nothing
+  set(HIDAPI_WITH_LIBUSB OFF)
   FetchContent_Declare(
     hidapi
     GIT_REPOSITORY https://github.com/libusb/hidapi.git
