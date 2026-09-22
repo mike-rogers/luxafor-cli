@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(LuxaforCLI VERSION 1.0.0 LANGUAGES C)
+project(LuxaforCLI VERSION 1.1.0 LANGUAGES C)
 
 option(LUXAFOR_VENDORED_HIDAPI "Build hidapi from source instead of using an installed copy" OFF)
 
@@ -27,6 +27,10 @@ endif()
 add_executable(LuxaforCLI main.c)
 target_link_libraries(LuxaforCLI PRIVATE hidapi::hidapi)
 target_compile_definitions(LuxaforCLI PRIVATE LUXAFOR_VERSION="${PROJECT_VERSION}")
+
+if(UNIX AND NOT APPLE)
+  target_link_libraries(LuxaforCLI PRIVATE m) # pow() needs libm on Linux
+endif()
 
 # The MSVC C runtime has no getopt, so fetch a BSD-licensed port and compile
 # it into the target directly. SOURCE_SUBDIR points at a directory with no

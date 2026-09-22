@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <getopt.h>
 #include "hidapi.h"
 
@@ -18,6 +19,10 @@
 #define LED_FRONT 0x41
 #define LED_BACK 0x42
 #define LED_ALL 0xFF
+
+// lowest channel value that produces visible light (found empirically:
+// the flag shows nothing for 0x01)
+#define MIN_VISIBLE_CHANNEL 0x02
 
 typedef enum
   {
@@ -69,6 +74,8 @@ static void print_usage(FILE *out)
 	  "Options:\n"
 	  "  -l, --led <target>    which LEDs to set: 1-6, front, back, all (default: all)\n"
 	  "                        (1-3 = flag side, 4-6 = rear side)\n"
+	  "  -b, --brightness <n>  dim the color to n percent (0-100, default: 100);\n"
+	  "                        scaled to how bright it looks, not raw LED power\n"
 	  "  -f, --fade <0-255>    fade to the color; higher is slower\n"
 	  "  -s, --strobe <0-255>  strobe the color; higher is slower\n"
 	  "  -w, --wave <1-5>      wave effect with the color\n"
@@ -88,6 +95,7 @@ static void print_usage(FILE *out)
 	  "Examples:\n"
 	  "  luxafor blue\n"
 	  "  luxafor 0x043f2c\n"
+	  "  luxafor --brightness 25 red\n"
 	  "  luxafor --fade 60 red\n"
 	  "  luxafor --led front --strobe 20 --repeat 5 green\n"
 	  "  luxafor --wave 3 --speed 30 blue\n"
@@ -131,6 +139,7 @@ int main(int argc, char* argv[])
   unsigned char patternId = 0;
   unsigned char waveSpeed = 0;
   unsigned char repeat = 0;
+  unsigned char brightness = 100;
 
 #ifdef DEBUG
   // used to print out HID device information
@@ -151,6 +160,7 @@ int main(int argc, char* argv[])
   static struct option longOpts[] =
     {
      { "led", required_argument, NULL, 'l' },
+     { "brightness", required_argument, NULL, 'b' },
      { "fade", required_argument, NULL, 'f' },
      { "strobe", required_argument, NULL, 's' },
      { "wave", required_argument, NULL, 'w' },
@@ -163,10 +173,13 @@ int main(int argc, char* argv[])
     };
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "l:f:s:w:p:S:r:hv", longOpts, NULL)) != -1) {
+  while ((opt = getopt_long(argc, argv, "l:b:f:s:w:p:S:r:hv", longOpts, NULL)) != -1) {
     switch (opt) {
     case 'l':
       led = parse_led_arg(optarg);
+      break;
+    case 'b':
+      brightness = parse_byte_arg("--brightness", optarg, 0, 100);
       break;
     case 'f':
       mode = MODE_FADE;
@@ -240,6 +253,21 @@ int main(int argc, char* argv[])
       if (found == 0) {
 	fprintf(stderr, "* ERROR:\tCan't find a color by that name. See 'luxafor --help' for the list.\n");
 	exit(EXIT_FAILURE);
+      }
+    }
+
+    if (brightness < 100) {
+      // LED output is linear in the PWM duty but perception isn't:
+      // gamma-correct so the percentage tracks apparent brightness
+      double factor = pow(brightness / 100.0, 2.2);
+      for (int k = 0; k < 3; k++) {
+	unsigned char scaled = (unsigned char)(color[k] * factor + 0.5);
+	// don't let a lit channel dim below what the hardware can show;
+	// only --brightness 0 means off
+	if (scaled < MIN_VISIBLE_CHANNEL && color[k] > 0 && brightness > 0) {
+	  scaled = MIN_VISIBLE_CHANNEL;
+	}
+	color[k] = scaled;
       }
     }
   }

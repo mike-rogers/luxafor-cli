@@ -48,6 +48,7 @@ The color argument can either be a simple color (`blue`, `green`, etc.) or a hex
 Beyond a static color, the Flag's other effects are supported:
 
 ```
+luxafor --brightness 25 red                    # dim it down (0-100, perceptually scaled)
 luxafor --fade 60 red                          # fade to red (0-255, higher is slower)
 luxafor --strobe 20 --repeat 5 green           # strobe green 5 times
 luxafor --wave 3 --speed 30 blue               # wave effect (types 1-5)
